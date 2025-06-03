@@ -2,7 +2,10 @@ import sys
 import subprocess
 from pathlib import Path
 from pyannote.audio import Pipeline
+import torch
 import whisper
+import json
+import torchaudio
 
 def convert_to_wav_if_needed(input_path: str) -> str:
     input_path = Path(input_path)
@@ -16,14 +19,21 @@ def convert_to_wav_if_needed(input_path: str) -> str:
 def diarize_and_transcribe(audio_path: str):
     print("🔊 Loading diarization model...")
     diarization_pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", use_auth_token=True)
-
+    diarization_pipeline.to(torch.device("cuda"))
     wav_path = convert_to_wav_if_needed(audio_path)
 
     print("🧠 Running diarization...")
-    diarization = diarization_pipeline(wav_path)
+    num_speakers = input("🔢 Enter the expected number of speakers (leave blank for automatic detection): ").strip()
+    waveform, sample_rate = torchaudio.load(wav_path)
+    audio_dict = {"waveform": waveform, "sample_rate": sample_rate}
+
+    if num_speakers.isdigit():
+        diarization = diarization_pipeline(audio_dict, num_speakers=int(num_speakers))
+    else:
+        diarization = diarization_pipeline(audio_dict)
 
     print("✍️ Transcribing with Whisper...")
-    model = whisper.load_model("medium")
+    model = whisper.load_model("large-v3", device="cuda")
     transcript = model.transcribe(audio_path, verbose=False)
 
     print("🪄 Combining diarization and transcript...")
@@ -65,16 +75,25 @@ def write_html(output_path: Path, speaker_segments, speaker_names):
         "</head>",
         "<body>",
         "<h1>Transcript</h1>",
-        "<script>",
-        "  const speakerNames = {};".replace("{}", str(speaker_names)),
-        "</script>",
     ]
 
     for speaker, text in speaker_segments:
         color = hash(speaker) % 360  # unique color per speaker
         html_lines.append(
-            f"<div class='block' style='border-left-color:hsl({color},70%,50%)'><div class='speaker'>{{speakerNames['{speaker}']}}</div>{text}</div>"
+            f"<div class='block' style='border-left-color:hsl({color},70%,50%)'><div class='speaker' data-speaker='{speaker}'></div>{text}</div>"
         )
+
+    html_lines.append(
+        "<script>",
+        f"  const speakerNames = {json.dumps(speaker_names)};",
+        "  window.addEventListener('DOMContentLoaded', () => {",
+        "    document.querySelectorAll('[data-speaker]').forEach(el => {",
+        "      const id = el.getAttribute('data-speaker');",
+        "      el.innerText = speakerNames[id] || id;",
+        "    });",
+        "  });",
+        "</script>"
+    )
 
     html_lines.append("</body></html>")
 
