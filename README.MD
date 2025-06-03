@@ -7,13 +7,41 @@ Supports multi-speaker detection and generates a **clean, interactive HTML trans
 
 ## 🔧 Prerequisites
 
+### 🧰 Hardware Requirements
+
+To run local speaker diarization + transcription efficiently, the following hardware is recommended:
+
+🎮 **GPU**
+- A recent NVIDIA GPU is highly recommended
+- Minimum: 8 GB VRAM (e.g., RTX 3060 or better)
+- CUDA support required (version 11.8+ tested)
+
+🧠 **RAM**
+- Minimum: 16 GB system RAM
+- Recommended: 32 GB or more for large files
+
+🖥️ **CPU**
+- Multi-core processor (Intel i7 / AMD Ryzen 7 or better)
+- Required if running entirely on CPU (significantly slower)
+
+💾 **Disk Storage**
+- At least 10 GB of free space
+- Models and temporary WAV files are stored locally
+
+🔌 **CUDA / Drivers**
+- NVIDIA drivers compatible with your CUDA version
+- Make sure `nvidia-smi` is available and working
+
+📦 **Pretrained Models**
+- Downloaded from Hugging Face on first run
+- Requires internet connection initially
+
+🪛 **System Tools**
+- `ffmpeg` required for audio format conversion
+- Python 3.12.x with `torch`, `torchaudio`, `pyannote.audio`
+
+
 ### ✅ Install `ffmpeg`
-
-For macOS:
-
-````bash
-brew install ffmpeg
-````
 
 For Ubuntu:
 
@@ -108,8 +136,8 @@ huggingface-cli login
 ````
 
 4. Accept model access:
-    - https://huggingface.co/pyannote/speaker-diarization → **Click "Access repository"**
-    - https://huggingface.co/pyannote/segmentation → **Click "Access repository"**
+    - https://huggingface.co/pyannote/speaker-diarization-3.1 → **Click "Access repository"**
+    - https://huggingface.co/pyannote/segmentation-3.0 → **Click "Access repository"**
 
 ---
 
