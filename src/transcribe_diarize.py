@@ -3,6 +3,8 @@ import subprocess
 from pathlib import Path
 from pyannote.audio import Pipeline
 import torch
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
 import whisper
 import json
 import torchaudio
@@ -18,7 +20,10 @@ def convert_to_wav_if_needed(input_path: str) -> str:
 
 def diarize_and_transcribe(audio_path: str):
     print("🔊 Loading diarization model...")
-    diarization_pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", use_auth_token=True)
+    diarization_pipeline = Pipeline.from_pretrained(
+        "pyannote/speaker-diarization-3.1",
+        use_auth_token=True
+    )
     diarization_pipeline.to(torch.device("cuda"))
     wav_path = convert_to_wav_if_needed(audio_path)
 
@@ -83,17 +88,17 @@ def write_html(output_path: Path, speaker_segments, speaker_names):
             f"<div class='block' style='border-left-color:hsl({color},70%,50%)'><div class='speaker' data-speaker='{speaker}'></div>{text}</div>"
         )
 
-    html_lines.append(
-        "<script>",
-        f"  const speakerNames = {json.dumps(speaker_names)};",
-        "  window.addEventListener('DOMContentLoaded', () => {",
-        "    document.querySelectorAll('[data-speaker]').forEach(el => {",
-        "      const id = el.getAttribute('data-speaker');",
-        "      el.innerText = speakerNames[id] || id;",
-        "    });",
-        "  });",
-        "</script>"
-    )
+    html_lines.append(f"""
+<script>
+  const speakerNames = {json.dumps(speaker_names)};
+  window.addEventListener('DOMContentLoaded', () => {{
+    document.querySelectorAll('[data-speaker]').forEach(el => {{
+      const id = el.getAttribute('data-speaker');
+      el.innerText = speakerNames[id] || id;
+    }});
+  }});
+</script>
+    """)
 
     html_lines.append("</body></html>")
 
