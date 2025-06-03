@@ -78,11 +78,18 @@ pip install -U pip
 
 Install dependencies:
 
-````bash
+```bash
 pip install openai-whisper faster-whisper
 pip install pyannote.audio torchaudio huggingface_hub
-````
+pip install -r requirements.txt
+```
 
+Check if the graphic card is recognized by torch : 
+```bash
+python -c "import torch; print(torch.cuda.get_device_name(0))"
+
+NVIDIA GeForce RTX 4090
+```
 ---
 
 ## 🔐 Hugging Face Setup
